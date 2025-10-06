@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash 
 
 # Takes one Parameter: Folder where creds.md.gpg is located
 
@@ -223,11 +223,11 @@ mountDrive() {
 # (Also makes a backup copy of the encrypted file first)
 decryptFile() {
     # Ensure backup directory exists and is writable by the current user
-    mkdir -p ./bak 2>/dev/null || true
-    if [ ! -w ./bak ]; then
-        echo "Fixing permissions on ./bak (requires sudo)..."
-        sudo chown "${USER}:${USER}" ./bak || true
-        sudo chmod 700 ./bak || true
+    mkdir -p "$DATA_FOLDER/bak" 2>/dev/null || true
+    if [ ! -w "$DATA_FOLDER/bak" ]; then
+        echo "Fixing permissions on $DATA_FOLDER/bak (requires sudo)..."
+        sudo chown "${USER}:${USER}" "$DATA_FOLDER/bak" || true
+        sudo chmod 700 "$DATA_FOLDER/bak" || true
     fi
     
     # SECURITY CHECK: Cleartext file should NEVER exist
@@ -261,7 +261,7 @@ decryptFile() {
     fi
     
     # backup current encrypted file
-    backup_file="./bak/$FILE.gpg-$(date +"%s")"
+    backup_file="$DATA_FOLDER/bak/$FILE.gpg-$(date +"%s")"
     cp -a "$DATA_FOLDER/$FILE.gpg" "$backup_file"
     echo "Backup created: $backup_file"
 
@@ -322,7 +322,7 @@ if printf '%s' "$password" | gpg "${OPTS_COMMON[@]}" --output "$DATA_FOLDER/$FIL
 else
     echo "***** RE-ENCRYPTION FAILED *****"
     echo "Your changes could not be saved!"
-    echo "The backup file in ./bak/ contains your previous version."
+    echo "The backup file in $DATA_FOLDER/bak/ contains your previous version."
     read -p "Press any key to exit."
     exit 1
 fi

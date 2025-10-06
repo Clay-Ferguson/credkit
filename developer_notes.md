@@ -1,5 +1,5 @@
 # CredKit Developer Notes
-
+ 
 This document captures the technical and security design details of CredKit, for developers.
 
 ## Architecture Overview
@@ -79,7 +79,7 @@ CredKit is designed for universal Linux compatibility using only POSIX-compliant
   - Clear screen and scrollback buffer
 
 ### Backups
-- Prior to edits, copy `<file>.gpg` to `./bak/<file>.gpg-<epoch>`
+- Prior to edits, copy `<file>.gpg` to `$DATA_FOLDER/bak/<file>.gpg-<epoch>`
 - Backups remain encrypted
 
 ### Input Validation (choose-pass.sh)
@@ -121,7 +121,7 @@ This section clarifies what CredKit aims to protect and against whom.
 - Encrypted credential store (`creds.md.gpg`)
 - Decrypted credentials in memory during use
 - Clipboard contents during retrieval
-- Backups of the encrypted store in `./bak/`
+- Backups of the encrypted store in `$DATA_FOLDER/bak/`
 
 ### Trusted computing base (TCB) & assumptions
 - The host OS, kernel, and hardware are trusted and uncompromised
@@ -161,4 +161,4 @@ This section clarifies what CredKit aims to protect and against whom.
 - Use only on trusted machines; keep OS and GPG updated
 - Lock your screen if stepping away; close sessions promptly
 - Prefer isolated terminals; avoid logging terminals or remote sessions when possible
-- Keep strong, unique GPG passphrases and back up the encrypted store and the `bak/` folder safely
+- Keep strong, unique GPG passphrases and back up the encrypted store and the `$DATA_FOLDER/bak/` folder safely

@@ -1,5 +1,5 @@
 # CredKit - AI Coding Agent Instructions
-
+ 
 ## Project Overview
 CredKit is a security-focused bash password manager that prioritizes minimalism over features. The entire system consists of three bash scripts using only standard Linux utilities (GPG, xclip, nano, ramfs). **Never suggest adding dependencies, web interfaces, databases, or complex frameworks** - this goes against the core security philosophy.
 
@@ -8,7 +8,7 @@ CredKit is a security-focused bash password manager that prioritizes minimalism 
 ## Architecture & Security Model
 - **Memory-only operations**: Cleartext passwords exist only in ramfs (never on disk)
 - **GPG encryption**: All credentials stored in `creds.md.gpg` using symmetric encryption
-- **Automatic backups**: Every edit creates timestamped backup in `bak/` directory
+- **Automatic backups**: Every edit creates timestamped backup in `$DATA_FOLDER/bak/` directory
 - **Single point of entry**: All scripts change to their own directory using `cd "$(dirname "$(readlink -f "$0")")"`
 
 ## Core Scripts & Workflows
@@ -29,7 +29,7 @@ CredKit is a security-focused bash password manager that prioritizes minimalism 
 - **Password caching**: Single GPG password prompt per session via stdin (`--passphrase-fd 0`)
 - **Editor integration**: Uses `nano` text editor for secure, no-temp-file editing
 - **Trap-based cleanup**: `trap cleanup_on_exit EXIT` ensures comprehensive memory cleanup
-- **Backup creation**: `./bak/$FILE.gpg-$(date +"%s")` before any modification
+- **Backup creation**: `$DATA_FOLDER/bak/$FILE.gpg-$(date +"%s")` before any modification
 
 ### `edit-pass.sh` - Convenience Wrapper
 - **Usage**: `./edit-pass.sh <data-folder>` - wrapper that calls `edit.sh <data-folder>`
@@ -70,7 +70,7 @@ catch_errors() {
 - **Interactive mode**: `OPTS_COMMON=(--batch --quiet --yes --pinentry-mode loopback --passphrase-fd 0)`
 - **Password via stdin**: `printf '%s' "$password" | gpg "${OPTS_COMMON[@]}"`
 - **Fallback to interactive**: If loopback fails, retry without `--pinentry-mode`
-- **Backup before decrypt**: `cp -a $FILE.gpg "./bak/$FILE.gpg-$(date +"%s")"`
+- **Backup before decrypt**: `cp -a $FILE.gpg "$DATA_FOLDER/bak/$FILE.gpg-$(date +"%s")"`
 
 ### Memory Security Patterns
 - **Ramfs management**: Check mount with `grep -qs "$MNT" /proc/mounts`
@@ -96,19 +96,19 @@ catch_errors() {
 ### When Modifying Scripts
 1. Test the complete workflow: encrypt → decrypt → edit → re-encrypt
 2. Verify ramfs cleanup with `mount | grep ramfs`
-3. Check backup creation in `bak/` directory
+3. Check backup creation in `$DATA_FOLDER/bak/` directory
 4. Test error conditions (wrong GPG password, missing xclip, etc.)
 
 ## Key Files & Structure
 - `creds.md.gpg`: The encrypted credential store (never commit cleartext)
 - `_creds.md`: Example/template file showing proper format
-- `bak/`: Automatic timestamped backups (`creds.md.gpg-<epoch>`)
+- `$DATA_FOLDER/bak/`: Automatic timestamped backups (`creds.md.gpg-<epoch>`)
 - `.gitignore`: Prevents ALL credential files (`*.md.gpg`, `*_creds.*`) from commits
 
 ## Development & Testing Workflow
 1. **Format validation**: Scripts validate exactly 2 commas per credential line
 2. **Dependency checks**: User-prompted xclip install (Debian/Ubuntu), manual elsewhere
-3. **Complete workflow test**: encrypt → decrypt → edit → re-encrypt → verify backups
+3. **Complete workflow test**: encrypt → decrypt → edit → re-encrypt → verify backups in `$DATA_FOLDER/bak/`
 4. **Security verification**: `mount | grep ramfs` (should be empty after cleanup)
 5. **Error scenarios**: Wrong GPG password, malformed credential lines, missing dependencies
 
