@@ -283,15 +283,10 @@ decryptFile() {
     if printf '%s' "$password" | gpg "${OPTS_COMMON[@]}" --output "$MNT/$FILE" -d "$DATA_FOLDER/$FILE.gpg"; then
         echo "Decryption successful - file ready for editing"
     else
-        echo "Loopback decryption failed; trying interactive pinentry (you may be prompted)."
-        if gpg -o "$MNT/$FILE" -d "$DATA_FOLDER/$FILE.gpg"; then
-            echo "Decryption successful - file ready for editing"
-        else
-            echo "***** DECRYPTION FAILED *****"
-            echo "This usually means you entered the wrong GPG password."
-            read -p "Press any key to exit."
-            exit 1
-        fi
+        echo ""
+        echo "***** DECRYPTION FAILED *****"
+        sleep 3
+        exit 1
     fi
 }
 
