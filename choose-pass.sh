@@ -14,10 +14,12 @@ cd "$(dirname "$(readlink -f "$0")")"
 # WORKFLOW:
 # 1. Prompts to install xclip dependency, if not present (Debian/Ubuntu systems)
 # 2. Asks for password and then decrypts GPG encrypted credential file (creds.md.gpg)
-# 3. Prompts for search term to filter stored credentials
-# 4. Displays matching entries (without revealing passwords)
-# 5. Allows selection of desired credential entry
-# 6. Sequentially copies service name, username (if present), and password to clipboard
+# 3. Enters infinite loop for credential retrieval (user closes terminal to exit):
+#    a. Prompts for search term to filter stored credentials
+#    b. Displays matching entries (without revealing passwords)
+#    c. Allows selection of desired credential entry
+#    d. Sequentially copies service name, username (if present), and password to clipboard
+#    e. Returns to step 3a for next credential lookup
 #
 # SECURITY FEATURES:
 # • Memory-only operations - no cleartext ever written to disk
@@ -203,18 +205,23 @@ copy_to_clipboard() {
     read -p "In clipboard: $2"
 }
 
+# Main loop - keeps running until user closes terminal
+while true; do
+clear
+
+# Reset arrays and counter for each search iteration
+filtered_entries=()
+services=()
+usernames=()
+passwords=()
+counter=0
+
 # Ask for search term
-echo "Enter search:"
+echo "Enter search (or Ctrl+C to exit):"
 read -r search_term
 search_term=$(echo "$search_term" | tr '[:upper:]' '[:lower:]')
 
 # Process the file and find matching entries
-declare -a filtered_entries
-declare -a services
-declare -a usernames
-declare -a passwords
-counter=0
-
 line_number=0
 for line in "${creds[@]}"; do
     line_number=$((line_number + 1))
@@ -260,7 +267,8 @@ done
 # Display filtered results
 if [[ ${#filtered_entries[@]} -eq 0 ]]; then
     echo "No matching entries found."
-    exit 0
+    echo ""
+    continue
 fi
 
 # If only one entry found, auto-select it
@@ -280,13 +288,15 @@ fi
 
 # Validate selection
 if [[ "$selection" == "q" || "$selection" == "Q" ]]; then
-    echo "Exiting."
-    exit 0
+    echo "Returning to search..."
+    echo ""
+    continue
 fi
 
 if ! [[ "$selection" =~ ^[0-9]+$ ]] || [ "$selection" -lt 1 ] || [ "$selection" -gt ${#filtered_entries[@]} ]; then
     echo "Invalid selection."
-    exit 1
+    echo ""
+    continue
 fi
 
 # Get the selected entry (adjust for zero-based indexing)
@@ -316,6 +326,6 @@ copy_to_clipboard "$selected_password" "Password"
 ) &
 echo "Clipboard will be cleared again in 10s."
 
-echo "All information has been copied. Exiting."
+echo -e "\nCredential copied. Ready for next search.\n"
 
-exit 0
+done  # End of main while loop
