@@ -157,24 +157,31 @@ catch_errors() {
 
 # Function to decrypt the file with proper error handling (memory-only)
 decrypt_file() {
-    echo "Decrypting $DATA_FOLDER/$FILE.gpg..."
-    # Capture decrypted contents in-memory to ensure we detect gpg exit status
     local gpg_output
-    if ! gpg_output=$(gpg -d --no-mdc-warning "$DATA_FOLDER/$FILE.gpg"); then
-        echo "***** DECRYPTION FAILED *****"
-        echo "This usually means you entered the wrong GPG password or the file is corrupt."
-        read -p "Press any key to exit."
-        exit 1
-    fi
-    # Populate array from captured output
-    readarray -t creds <<<"$gpg_output"
-    if [[ ${#creds[@]} -eq 0 ]]; then
-        echo "***** WARNING *****"
-        echo "Decryption succeeded but the file appears to be empty."
-        read -p "Press any key to exit."
-        exit 1
-    fi
-    echo "Decryption successful."
+    
+    # Loop until successful decryption
+    while true; do
+        echo "Decrypting $DATA_FOLDER/$FILE.gpg..."
+        # Capture decrypted contents in-memory to ensure we detect gpg exit status
+        if gpg_output=$(gpg -d --no-mdc-warning "$DATA_FOLDER/$FILE.gpg" 2>/dev/null); then
+            # Decryption succeeded - populate array from captured output
+            readarray -t creds <<<"$gpg_output"
+            if [[ ${#creds[@]} -eq 0 ]]; then
+                echo "***** WARNING *****"
+                echo "Decryption succeeded but the file appears to be empty."
+                read -p "Press any key to exit."
+                exit 1
+            fi
+            echo "Decryption successful."
+            break
+        else
+            echo ""
+            echo "***** DECRYPTION FAILED *****"
+            echo "Wrong password or file is corrupt. Please try again."
+            echo "(Press Ctrl+C to exit)"
+            echo ""
+        fi
+    done
 }
 
 # decrypt the encrypted file content right into an array in memory.
