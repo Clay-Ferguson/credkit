@@ -181,3 +181,27 @@ Edit credentials:
 - Edits credentials in `/path/to/your/data/creds.md.gpg`
 - Opens a secure editor session in RAM; saves re-encrypt back to `creds.md.gpg`
 
+## Desktop Shortcut (Ubuntu)
+
+The `install-choose-pass.sh` script creates a `.desktop` entry so you can launch CredKit's password picker directly from your Ubuntu application launcher—and optionally pin it to your dock.
+
+### Install
+```bash
+./install-choose-pass.sh /path/to/your/data
+```
+
+This will:
+1. Validate that `choose-pass.sh`, `password-icon.png`, and your data folder all exist
+2. Create a `credkit-choose-pass.desktop` file in `~/.local/share/applications/`
+3. Refresh the desktop database so the launcher picks it up immediately
+
+### Usage
+- Open the Ubuntu application launcher and search for **CredKit**
+- Right-click the CredKit icon and select **Add to Favorites** to pin it to your dock
+- Clicking the icon opens a terminal and runs `choose-pass.sh` with your data folder
+
+### Notes
+- The shortcut launches with `Terminal=true`, so a terminal window opens automatically for the interactive GPG prompt and credential selection
+- The icon used is `password-icon.png` from the CredKit project directory
+- If you move the CredKit scripts or your data folder, re-run the installer to update the shortcut
+
