@@ -158,12 +158,17 @@ catch_errors() {
 # Function to decrypt the file with proper error handling (memory-only)
 decrypt_file() {
     local gpg_output
-    
+    local gpg_stderr
+    local gpg_stderr_file
+
     # Loop until successful decryption
     while true; do
         echo "Decrypting $DATA_FOLDER/$FILE.gpg..."
-        # Capture decrypted contents in-memory to ensure we detect gpg exit status
-        if gpg_output=$(gpg -d --no-mdc-warning "$DATA_FOLDER/$FILE.gpg" 2>/dev/null); then
+        # Capture decrypted contents in-memory to ensure we detect gpg exit status.
+        # Capture stderr separately so we can tell a cancelled dialog from a bad password.
+        gpg_stderr_file=$(mktemp)
+        if gpg_output=$(gpg -d --no-mdc-warning "$DATA_FOLDER/$FILE.gpg" 2>"$gpg_stderr_file"); then
+            rm -f "$gpg_stderr_file"
             # Decryption succeeded - populate array from captured output
             readarray -t creds <<<"$gpg_output"
             if [[ ${#creds[@]} -eq 0 ]]; then
@@ -175,11 +180,27 @@ decrypt_file() {
             echo "Decryption successful."
             break
         else
+            gpg_stderr=$(cat "$gpg_stderr_file")
+            rm -f "$gpg_stderr_file"
+
+            # If the user cancelled the password dialog (ESC / Cancel button),
+            # exit gracefully instead of immediately re-popping the dialog, which
+            # would otherwise trap the user and block them from closing the terminal.
+            if echo "$gpg_stderr" | grep -qiE 'cancel|operation cancelled|no passphrase'; then
+                echo ""
+                echo "Password entry cancelled. Exiting."
+                exit 0
+            fi
+
             echo ""
             echo "***** DECRYPTION FAILED *****"
-            echo "Wrong password or file is corrupt. Please try again."
-            echo "(Press Ctrl+C to exit)"
+            echo "Wrong password or file is corrupt."
+            echo "(Press Ctrl+C now to exit, or cancel the password dialog next time.)"
             echo ""
+            # Brief pause before re-opening the password dialog so the user always
+            # has a window to click the terminal (e.g. to close it) and never gets
+            # stuck behind an endlessly re-popping dialog.
+            sleep 2
         fi
     done
 }
